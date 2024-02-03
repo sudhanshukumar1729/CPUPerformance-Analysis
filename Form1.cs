@@ -1,62 +1,161 @@
+using System;
+using System.Data.SqlClient;
+using System.Diagnostics;
+using System.Windows.Forms;
 namespace TaskManager_DataBase
 {
-partial class Form1
+ public partial class Form1 : Form
+ {
+ private string connectionString = "Data Source=DESKTOP7KE8K8N\\SQLEXPRESS;Initial Catalog=manager;Integrated Security=True";
+ private PerformanceCounter cpuCounter;
+ public Form1()
+ {
+ InitializeComponent();
+ InitializePerformanceCounter();
+ UpdateTaskList();
+ UpdateCpuPerformance();
+ }
+ private void InitializePerformanceCounter()
+ {
+ cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+ // public PerformanceCounter(string categoryName, string counterName, string
+instanceName)
+ // : this(categoryName, counterName, instanceName, readOnly: true)
+
+ cpuCounter.NextValue(); // Call NextValue once to initialize the counter
+ }
+ private void UpdateTaskList()
+ {
+ listBoxTasks.Items.Clear();
+ Process[] processes = Process.GetProcesses();
+ foreach (Process process in processes)
+ {
+ listBoxTasks.Items.Add($"{process.ProcessName} (ID: {process.Id})");
+ }
+ }
+CPU Performance Monitor
+Project Report 2024
+private void UpdateCpuPerformance()
 {
-private System.ComponentModel.IContainer components = null;
-protected override void Dispose(bool disposing)
+float cpuUsage = cpuCounter.NextValue();
+labelCpuUsage.Text = $"CPU Usage: {cpuUsage:F2}%";
+if (cpuUsage > 73.93409729)//73.93409729
 {
-if (disposing && (components != null))
-{
-components.Dispose();
+StoreCpuPerformanceInDatabase(cpuUsage);
 }
-base.Dispose(disposing);
 }
-private void InitializeComponent()
+private void StoreCpuPerformanceInDatabase(float cpuUsage)
+ {
+ try
+ {
+ using (SqlConnection connection = new SqlConnection(connectionString))
+ {
+ connection.Open();
+ string query = "INSERT INTO CpuPerformance (Timestamp, CpuUsage) VALUES
+(@Timestamp, @CpuUsage)";
+ using (SqlCommand command = new SqlCommand(query, connection))
+ {
+ command.Parameters.AddWithValue("@Timestamp", DateTime.Now);
+ command.Parameters.AddWithValue("@CpuUsage", cpuUsage);
+ command.ExecuteNonQuery();
+ }
+ }
+ }
+ catch (Exception ex)
+ {
+ MessageBox.Show($"Error storing CPU performance in the database: {ex.Message}",
+"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+ }
+ }
+CPU Performance Monitor
+Project Report 2024
+private void timer1_Tick(object sender, EventArgs e)
 {
-this.components = new System.ComponentModel.Container();
-this.listBoxTasks = new System.Windows.Forms.ListBox();
-this.labelCpuUsage = new System.Windows.Forms.Label();
-this.timer1 = new System.Windows.Forms.Timer(this.components);
-this.SuspendLayout();
-//
-// listBoxTasks
-//
-this.listBoxTasks.FormattingEnabled = true;
-this.listBoxTasks.Location = new System.Drawing.Point(12, 12);
-this.listBoxTasks.Name = "listBoxTasks";
-this.listBoxTasks.Size = new System.Drawing.Size(200, 200);
-this.listBoxTasks.TabIndex = 0;
-//
-// labelCpuUsage
-//
-this.labelCpuUsage.AutoSize = true;
-this.labelCpuUsage.Location = new System.Drawing.Point(12, 220);
-this.labelCpuUsage.Name = "labelCpuUsage";
-this.labelCpuUsage.Size = new System.Drawing.Size(82, 13);
-this.labelCpuUsage.TabIndex = 1;
-this.labelCpuUsage.Text = "CPU Usage: 0%";
-//
-// timer1
-//
-this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
-//
-// Form1
-//
-this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-this.ClientSize = new System.Drawing.Size(224, 251);
-this.Controls.Add(this.labelCpuUsage);
-this.Controls.Add(this.listBoxTasks);
-this.Name = "Form1";
-this.Text = "Task Manager";
-this.Load += new System.EventHandler(this.Form1_Load);
-this.FormClosing += new
-System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-this.ResumeLayout(false);
-this.PerformLayout();
+UpdateTaskList();
+UpdateCpuPerformance();
 }
-private System.Windows.Forms.ListBox listBoxTasks;
-private System.Windows.Forms.Label labelCpuUsage;
-private System.Windows.Forms.Timer timer1;
+private void Form1_Load(object sender, EventArgs e)
+{
+InitializeDatabase(); // Call this to create the database table if it doesn't exist
+timer1.Start();
+}
+private void InitializeDatabase()
+ {
+ try
+ {
+ using (SqlConnection connection = new SqlConnection(connectionString))
+ {
+ connection.Open();
+ string createTableQuery = @"
+ USE manager;
+ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE
+TABLE_NAME = 'CpuPerformance')
+ BEGIN
+ CREATE TABLE CpuPerformance (
+ Id INT PRIMARY KEY IDENTITY(1,1),
+ Timestamp DATETIME NOT NULL,
+ CpuUsage FLOAT NOT NULL
+ );
+ END ";
+ using (SqlCommand command = new SqlCommand(createTableQuery, connection))
+ {
+ command.ExecuteNonQuery();
+ }
+ }
+ }
+ catch (Exception ex)
+ {
+ MessageBox.Show($"Error initializing database: {ex.Message}", "Error",
+MessageBoxButtons.OK, MessageBoxIcon.Error);
+ }
+ }
+CPU Performance Monitor
+Project Report 2024
+private void GenerateReport()
+{
+try
+{
+using (SqlConnection connection = new SqlConnection(connectionString))
+{
+connection.Open();
+string query = "SELECT MAX(CpuUsage) AS MaxCpuUsage, MIN(CpuUsage) AS
+MinCpuUsage, AVG(CpuUsage) AS AvgCpuUsage, DATEDIFF(SECOND,
+MIN(Timestamp), MAX(Timestamp)) AS TotalRunTime FROM CpuPerformance";
+using (SqlCommand command = new SqlCommand(query, connection))
+{
+SqlDataReader reader = command.ExecuteReader();
+if (reader.Read())
+{
+float maxCpuUsage = Convert.ToSingle(reader["MaxCpuUsage"]);
+float minCpuUsage = Convert.ToSingle(reader["MinCpuUsage"]);
+float avgCpuUsage = Convert.ToSingle(reader["AvgCpuUsage"]);
+int totalRunTimeInSeconds = Convert.ToInt32(reader["TotalRunTime"]);
+TimeSpan totalRunTime =
+TimeSpan.FromSeconds(totalRunTimeInSeconds);
+MessageBox.Show($"Report:\n\nMaximum CPU Usage:
+{maxCpuUsage:F2}%\nMinimum CPU Usage: {minCpuUsage:F2}%\nAverage CPU Usage:
+{avgCpuUsage:F2}%\nTotal Run Time: {totalRunTime}", "Report",
+MessageBoxButtons.OK, MessageBoxIcon.Information);
+}
+reader.Close();
+}
+}
+}
+CPU Performance Monitor
+Project Report 2024
+catch (Exception ex)
+{
+MessageBox.Show($"Error generating report: {ex.Message}", "Error",
+MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+}
+// Modify the Form1_FormClosing method to call GenerateReport before
+closing the application
+private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+{
+timer1.Stop();
+cpuCounter.Dispose();
+GenerateReport(); // Call this function to generate the report
+}
 }
 }
