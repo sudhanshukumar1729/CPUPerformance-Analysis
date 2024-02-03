@@ -1,0 +1,162 @@
+﻿<Window x:Class="ResourcesWidget.MyWidget"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"		
+		WindowStyle="None" SizeToContent="WidthAndHeight" ResizeMode="NoResize"
+		AllowsTransparency="True" MouseDown="Window_MouseDown" FontSize="20" Title="{Binding TaskBarTitle}"
+		DataContext="{Binding RelativeSource={RelativeSource Self}}" ShowInTaskbar="{Binding TaskbarIcon}"
+		Loaded="Window_Loaded" Topmost="{Binding AlwaysOnTop,Mode=OneWay}"
+		MinWidth="120" >
+    <Window.Background>
+        <SolidColorBrush Opacity="{Binding WindowOpacity,Mode=OneWay}" Color="{Binding WindowColor,Mode=OneWay}"/>
+    </Window.Background>
+    <Window.Resources>
+        <Image x:Key="PinnedIcon" Source="/Images/PinnedIcon.png" Width="25"/>
+        <Image x:Key="UnPinnedIcon" Source="/Images/UnPinnedIcon.png" Width="25"/>
+        <Style x:Key="ToggleButtonStyle"  TargetType="{x:Type ToggleButton}">
+            <Setter Property="Content" Value="{StaticResource UnPinnedIcon}" />
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Content" Value="{StaticResource PinnedIcon}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <ControlTemplate x:Key="ToggleButtonControlTemplate" TargetType="{x:Type ToggleButton}">
+            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0"
+                    Background="{Binding WindowColor,Mode=OneWay}" SnapsToDevicePixels="True">
+                <ContentPresenter x:Name="contentPresenter" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                  Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="Button.IsDefaulted" Value="True">
+                    <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                </Trigger>
+                  <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" TargetName="border" Value="#80DADADA"/>
+                    <Setter Property="Background" TargetName="border" Value="#210080FF"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="BorderBrush" TargetName="border" Value="#90006CD9"/>
+                    <Setter Property="Background" TargetName="border" Value="#400080FF"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <StackPanel Orientation="Vertical" DockPanel.Dock="Top" Margin="0,3" Width="64">
+            <Separator Background="Black"/>
+            <Separator Background="Black"/>
+            <Separator Background="Black"/>
+        </StackPanel>
+        <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center" DockPanel.Dock="Top">
+            <Grid.Background>
+                <SolidColorBrush Opacity="{Binding WindowOpacity,Mode=OneWay}" Color="{Binding WindowColor,Mode=OneWay}"/>
+            </Grid.Background>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <ToggleButton ToolTip="Always On Top" Grid.Column="0" IsChecked="{Binding AlwaysOnTop}" Height="38" MinWidth="30" Padding="5,2" 
+                          Style="{StaticResource ToggleButtonStyle}" Template="{StaticResource ToggleButtonControlTemplate}" />
+
+            <Button ToolTip="Settings" Click="Settings_Click" Grid.Column="1" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                    Height="38" MinWidth="30" HorizontalAlignment="Stretch" Padding="5,2">
+                <Image Source="/Images/SettingsIcon.png"/>
+            </Button>
+            <Button ToolTip="Refresh Network Interfaces" Click="Refresh_Click" Grid.Column="2" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                    Height="38" MinWidth="30" HorizontalAlignment="Stretch" Padding="5,2">
+                <Image Source="/Images/RefreshIcon.png"/>
+            </Button>
+            <Button ToolTip="Close" Click="Close_Click" Grid.Column="3" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                    Height="38" MinWidth="30" HorizontalAlignment="Stretch" Padding="5,2">
+                <Image Source="/Images/CloseIcon.png" Width="25"/>
+            </Button>
+        </Grid>
+        <Separator HorizontalAlignment="Stretch" DockPanel.Dock="Top"/>
+        <Grid HorizontalAlignment="Center" DockPanel.Dock="Bottom" Margin="3,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+
+            <ComboBox HorizontalAlignment="Center" ItemsSource="{Binding Interfaces, Mode=OneWay}" DisplayMemberPath="Name" SelectedValue="{Binding SelectedInterface}"
+				   Visibility="{Binding InterfaceVisibility}"  Margin="5" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="2" Text="IP Address :" Visibility="{Binding IpLableVisiblity}"
+					   Foreground="{Binding LableColor}"/>
+            <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1" Grid.Row="2" Text="{Binding Ip, Mode=OneWay}"
+				  Foreground="{Binding IpColor,Mode=OneWay}"  Visibility="{Binding IpVisibility}"/>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="3" Text="Status :" Visibility="{Binding StatusLableVisiblity}"
+					    Foreground="{Binding LableColor}"/>
+            <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1"  Grid.Row="3" Text="{Binding Status, Mode=OneWay}"
+				   Foreground="{Binding StatusColor,Mode=OneWay}" Visibility="{Binding StatusVisibility}"/>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="4" Text="Received :" Visibility="{Binding ReceivedLableVisiblity}"
+				 Foreground="{Binding LableColor}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1" Grid.Row="4"
+					Visibility="{Binding ReceivedVisibility}" >
+                <TextBlock  Text="{Binding ReceivedBytes, Mode=OneWay}" Foreground="{Binding ReceivedColor,Mode=OneWay}" Margin="0,0,5,0"/>
+                <TextBlock  Text="{Binding  ReceivedUnit, Mode=OneWay}" Foreground="{Binding ReceivedColor,Mode=OneWay}"/>
+            </StackPanel>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="5" Text="Down Speed :" Visibility="{Binding DSpeedLableVisiblity}"
+					    Foreground="{Binding LableColor}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1" Grid.Row="5"
+					Visibility="{Binding DSpeedVisibility}" >
+                <TextBlock  Text="{Binding DSpeed, Mode=OneWay}" Foreground="{Binding DColor,Mode=OneWay}" Margin="0,0,5,0"/>
+                <TextBlock  Text="{Binding  DSpeedUnit, Mode=OneWay}" Foreground="{Binding DColor,Mode=OneWay}"/>
+            </StackPanel>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="6" Text="Sent :" Visibility="{Binding SentLableVisiblity}"
+					    Foreground="{Binding LableColor}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1" Grid.Row="6"
+					Visibility="{Binding SentVisibility}" >
+                <TextBlock  Text="{Binding SentBytes, Mode=OneWay}" Foreground="{Binding SentColor,Mode=OneWay}" Margin="0,0,5,0"/>
+                <TextBlock  Text="{Binding  SentUnit, Mode=OneWay}" Foreground="{Binding SentColor,Mode=OneWay}"/>
+            </StackPanel>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="7" Text="Up Speed :" Visibility="{Binding USpeedLableVisiblity}"
+					    Foreground="{Binding LableColor}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1" Grid.Row="7"
+					Visibility="{Binding USpeedVisibility}" >
+                <TextBlock  Text="{Binding USpeed, Mode=OneWay}" Foreground="{Binding UColor,Mode=OneWay}" Margin="0,0,5,0"/>
+                <TextBlock  Text="{Binding  USpeedUnit, Mode=OneWay}" Foreground="{Binding UColor,Mode=OneWay}"/>
+            </StackPanel>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="8" Text="CPU :" Visibility="{Binding CPULabelVisibility}"
+					    Foreground="{Binding LableColor}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1" Grid.Row="8"
+					Visibility="{Binding CpuVisibility}" >
+                <TextBlock  Text="{Binding CpuUsage, Mode=OneWay}" Foreground="{Binding CpuColor,Mode=OneWay}" Margin="0,0,5,0"/>
+                <TextBlock  Text="{Binding  CpuUnit, Mode=OneWay}" Foreground="{Binding CpuColor,Mode=OneWay}"/>
+            </StackPanel>
+
+            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Grid.Column="0" Grid.Row="9" Text="Ram :" Visibility="{Binding RamLableVisiblity}"
+					    Foreground="{Binding LableColor}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10" Grid.Column="1" Grid.Row="9"
+					Visibility="{Binding RamVisibility}" >
+                <TextBlock  Text="{Binding RamUsage, Mode=OneWay}" Foreground="{Binding RamColor,Mode=OneWay}" Margin="0,0,5,0"/>
+                <TextBlock  Text="{Binding  RamUnit, Mode=OneWay}" Foreground="{Binding RamColor,Mode=OneWay}"/>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window>
